@@ -153,16 +153,14 @@ public class HTTPNetworkTransport: NetworkTransport {
     let formData = MultipartFormData()
     
     let fields = requestBody(for: operation)
-    for (name, data) in fields {
-      if let data = data as? GraphQLMap {
-        let data = try! serializationFormat.serialize(value: data)
-        formData.appendPart(data: data, name: name)
-      } else if let data = data as? String {
-        formData.appendPart(string: data, name: name)
-      } else {
-        formData.appendPart(string: data.debugDescription, name: name)
-      }
+    let data = try! serializationFormat.serialize(value: fields)
+    formData.appendPart(data: data, name: "operations")
+    let map = files.map { (file)  in
+        return "variables.".appending(file.fieldName)
     }
+    let m  = ["file": map]
+    let datamap = try! serializationFormat.serialize(value: m)
+    formData.appendPart(data: datamap, name: "map")
     
     for f in files {
       formData.appendPart(inputStream: f.inputStream, contentLength: f.contentLength, name: f.fieldName, contentType: f.mimeType, filename: f.originalName)
